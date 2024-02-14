@@ -1,0 +1,86 @@
+
+// AK CAP Toolbox - Forex Trading Robot
+// Developer: Forex Robot Easy Team
+// Website: forexroboteasy.com
+
+// Include necessary libraries and dependencies
+#include <Trade\Trade.mqh>
+#include <Indicators\Indicators.mqh>
+
+// Define global variables
+input int lotSize = 0.01; // Default lot size for trades
+input double stopLoss = 50.0; // Default stop loss value in pips
+input double takeProfit = 100.0; // Default take profit value in pips
+
+// Initialize AK CAP Toolbox
+void OnInit()
+{
+    // Initialize trading functions and indicators
+    TradeInit();
+    IndicatorsInit();
+    
+    // Print welcome message
+    Print('AK CAP Toolbox - Forex Trading Robot initialized!');
+}
+
+// Handle trading signals and execute trades
+void OnTick()
+{
+    // Get VWAP value for the current currency pair
+    double vwap = GetVWAP(Symbol());
+    
+    // Get current price for the currency pair
+    double currentPrice = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+    
+    // Check if current price is above VWAP
+    if (currentPrice > vwap)
+    {
+        // Place a buy trade
+        double stopLossPrice = currentPrice - stopLoss * Point();
+        double takeProfitPrice = currentPrice + takeProfit * Point();
+        TradeBuy(Symbol(), lotSize, stopLossPrice, takeProfitPrice);
+    }
+    // Check if current price is below VWAP
+    else if (currentPrice < vwap)
+    {
+        // Place a sell trade
+        double stopLossPrice = currentPrice + stopLoss * Point();
+        double takeProfitPrice = currentPrice - takeProfit * Point();
+        TradeSell(Symbol(), lotSize, stopLossPrice, takeProfitPrice);
+    }
+}
+
+// Calculate VWAP for a given currency pair
+double GetVWAP(string symbol)
+{
+    // Get historical prices and volumes for the currency pair
+    MqlRates rates[];
+    double volumes[];
+    ArraySetAsSeries(rates, true);
+    ArraySetAsSeries(volumes, true);
+    int count = CopyRates(symbol, PERIOD_D1, 0, 1000, rates);
+    CopyTickVolume(symbol, volumes, MODE_VOLUME, 0, 1000);
+    
+    // Calculate VWAP
+    double vwap = 0.0;
+    double totalVolume = 0.0;
+    for (int i = 0; i < count; i++)
+    {
+        vwap += rates[i].close * volumes[i];
+        totalVolume += volumes[i];
+    }
+    vwap /= totalVolume;
+    
+    return vwap;
+}
+
+// Handle deinitialization of AK CAP Toolbox
+void OnDeinit(const int reason)
+{
+    // Cleanup resources and perform any necessary actions
+    TradeDeinit();
+    IndicatorsDeinit();
+    
+    // Print final message
+    Print('AK CAP Toolbox - Forex Trading Robot deinitialized!');
+}
